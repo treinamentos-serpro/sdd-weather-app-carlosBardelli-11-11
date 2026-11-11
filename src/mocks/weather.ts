@@ -1,0 +1,66 @@
+import type { WeatherData } from '../types/weather';
+
+export const mockWeatherData: WeatherData = {
+  city: {
+    id: 3452925,
+    name: 'São Paulo',
+    country: 'Brasil',
+    countryCode: 'BR',
+    admin1: 'São Paulo',
+    latitude: -23.5475,
+    longitude: -46.63611,
+    timezone: 'America/Sao_Paulo',
+  },
+  current: {
+    observedAt: '2026-11-11T12:00:00-03:00',
+    temperatureC: 24.3,
+    condition: { code: 2, label: 'Parcialmente nublado' },
+    humidityPercent: 61,
+    windSpeedKmh: 12.4,
+    pressureHpa: 1012.8,
+    precipitationMm: 0,
+  },
+  forecast: [
+    {
+      date: '2026-11-11',
+      minTemperatureC: 18.2,
+      maxTemperatureC: 27.1,
+      condition: { code: 2, label: 'Parcialmente nublado' },
+      precipitationMm: 0,
+      precipitationProbabilityPercent: 10,
+    },
+    {
+      date: '2026-11-12',
+      minTemperatureC: 18,
+      maxTemperatureC: 26.4,
+      condition: { code: 3, label: 'Nublado' },
+      precipitationMm: 0,
+      precipitationProbabilityPercent: 15,
+    },
+    {
+      date: '2026-11-13',
+      minTemperatureC: 17.6,
+      maxTemperatureC: 25.8,
+      condition: { code: 61, label: 'Chuva fraca' },
+      precipitationMm: 4.2,
+      precipitationProbabilityPercent: 75,
+    },
+    {
+      date: '2026-11-14',
+      minTemperatureC: 17.1,
+      maxTemperatureC: 24.9,
+      condition: { code: 2, label: 'Parcialmente nublado' },
+      precipitationMm: 0,
+      precipitationProbabilityPercent: 5,
+    },
+    {
+      date: '2026-11-15',
+      minTemperatureC: 18.1,
+      maxTemperatureC: 26,
+      condition: { code: 1, label: 'Predominantemente limpo' },
+      precipitationMm: 0,
+      precipitationProbabilityPercent: 5,
+    },
+  ],
+  fetchedAt: '2026-11-11T12:05:00-03:00',
+};

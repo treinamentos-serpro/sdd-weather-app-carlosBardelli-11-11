@@ -1,0 +1,29 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: dark;
+  }
+
+  html {
+    min-height: 100%;
+  }
+
+  body {
+    min-height: 100vh;
+    background-color: #0b1020;
+    color: #fff;
+    font-family: Inter, system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    background-image:
+      radial-gradient(48rem 32rem at 88% 0%, rgb(109 124 255 / 13%), transparent 72%),
+      radial-gradient(38rem 28rem at 0% 90%, rgb(245 185 66 / 8%), transparent 70%);
+    background-attachment: fixed;
+  }
+
+  #root {
+    min-height: 100vh;
+  }
+}
