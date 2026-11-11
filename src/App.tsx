@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import CurrentWeather from './components/CurrentWeather';
 import ForecastList from './components/ForecastList';
 import SearchBar from './components/SearchBar';
@@ -6,60 +6,25 @@ import EmptyState from './components/states/EmptyState';
 import ErrorState from './components/states/ErrorState';
 import LoadingState from './components/states/LoadingState';
 import UnitToggle from './components/UnitToggle';
-import { mockWeatherData } from './mocks/weather';
-import type { Unit, WeatherData } from './types/weather';
-
-type WeatherState =
-  | { status: 'idle' }
-  | { status: 'loading'; query: string }
-  | { status: 'success'; data: WeatherData }
-  | { status: 'empty'; query: string }
-  | { status: 'error'; query: string; message: string };
-
-function normalizeCityName(value: string): string {
-  return value
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .trim()
-    .toLocaleLowerCase('pt-BR');
-}
+import { useWeather } from './hooks/useWeather';
+import type { Unit } from './types/weather';
 
 export default function App() {
   const [unit, setUnit] = useState<Unit>('celsius');
-  const [weatherState, setWeatherState] = useState<WeatherState>({
-    status: 'success',
-    data: mockWeatherData,
-  });
+  const { status, data, cities, error, query, search, selectCity, retry } = useWeather();
+  const mainContentRef = useRef<HTMLElement>(null);
+  const previousStatusRef = useRef(status);
 
   useEffect(() => {
-    if (weatherState.status !== 'loading') return;
+    if (previousStatusRef.current === 'loading' && status !== 'loading') {
+      mainContentRef.current?.focus();
+    }
 
-    const { query } = weatherState;
-    const timeoutId = window.setTimeout(() => {
-      try {
-        const isMockCity =
-          normalizeCityName(query) === normalizeCityName(mockWeatherData.city.name);
-        setWeatherState(
-          isMockCity ? { status: 'success', data: mockWeatherData } : { status: 'empty', query },
-        );
-      } catch {
-        setWeatherState({
-          status: 'error',
-          query,
-          message: 'Ocorreu um erro inesperado. Tente novamente.',
-        });
-      }
-    }, 300);
+    previousStatusRef.current = status;
+  }, [status]);
 
-    return () => window.clearTimeout(timeoutId);
-  }, [weatherState]);
-
-  function handleSearch(query: string) {
-    setWeatherState({ status: 'loading', query });
-  }
-
-  function handleRetry() {
-    if (weatherState.status === 'error') handleSearch(weatherState.query);
+  function isSelectedCity(cityLatitude: number, cityLongitude: number): boolean {
+    return data?.city.latitude === cityLatitude && data.city.longitude === cityLongitude;
   }
 
   return (
@@ -89,36 +54,74 @@ export default function App() {
             <UnitToggle unit={unit} onChange={setUnit} />
           </div>
 
-          <SearchBar onSearch={handleSearch} disabled={weatherState.status === 'loading'} />
+          <SearchBar onSearch={(name) => void search(name)} disabled={status === 'loading'} />
         </header>
 
-        <main id="main-content" tabIndex={-1} className="mt-8 space-y-8 outline-none sm:mt-10">
-          {weatherState.status === 'success' ? (
+        <main
+          id="main-content"
+          ref={mainContentRef}
+          tabIndex={-1}
+          aria-busy={status === 'loading'}
+          className="mt-8 space-y-8 rounded-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent-400 sm:mt-10"
+        >
+          {cities.length > 0 && (
+            <section aria-labelledby="city-results-title" className="space-y-3">
+              <h2 id="city-results-title" className="text-sm font-semibold text-white/75">
+                Cidades encontradas
+              </h2>
+              <ul className="flex flex-wrap gap-2">
+                {cities.map((city) => {
+                  const location = [city.admin1, city.country]
+                    .filter((part): part is string => part !== null)
+                    .join(', ');
+
+                  return (
+                    <li key={`${city.id ?? 'city'}-${city.latitude}-${city.longitude}`}>
+                      <button
+                        type="button"
+                        aria-label={location ? `${city.name}, ${location}` : city.name}
+                        aria-pressed={isSelectedCity(city.latitude, city.longitude)}
+                        disabled={status === 'loading'}
+                        onClick={() => void selectCity(city)}
+                        className="min-h-11 max-w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-left text-sm text-white transition-colors hover:bg-white/10 aria-pressed:border-accent-400/60 aria-pressed:bg-accent-500/15 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-400 disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        <span className="block truncate font-medium">{city.name}</span>
+                        {location && (
+                          <span className="block truncate text-xs text-white/65">{location}</span>
+                        )}
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
+          )}
+
+          {status === 'success' && data ? (
             <>
-              <CurrentWeather
-                city={weatherState.data.city}
-                current={weatherState.data.current}
-                unit={unit}
-              />
-              <ForecastList
-                forecast={weatherState.data.forecast}
-                unit={unit}
-                timeZone={weatherState.data.city.timezone}
-              />
+              <CurrentWeather city={data.city} current={data.current} unit={unit} />
+              <ForecastList forecast={data.forecast} unit={unit} />
             </>
-          ) : weatherState.status === 'loading' ? (
+          ) : status === 'loading' ? (
             <LoadingState />
-          ) : weatherState.status === 'error' ? (
-            <ErrorState message={weatherState.message} onRetry={handleRetry} />
-          ) : weatherState.status === 'empty' ? (
+          ) : status === 'error' ? (
+            <ErrorState
+              message={error ?? 'Falha ao carregar o clima.'}
+              onRetry={() => void retry()}
+            />
+          ) : status === 'empty' ? (
             <EmptyState
-              title="Cidade não encontrada"
-              hint={`Não há dados de demonstração para “${weatherState.query}”. Tente São Paulo.`}
+              title="Nenhuma cidade encontrada"
+              hint={
+                query
+                  ? `Nenhuma cidade corresponde a “${query}”. Confira o nome e tente novamente.`
+                  : 'Informe o nome de uma cidade para iniciar a busca.'
+              }
             />
           ) : (
             <EmptyState
-              title="Nenhuma cidade selecionada"
-              hint="Informe uma cidade para consultar as condições do tempo."
+              title="Consulte o clima da sua cidade"
+              hint="Pesquise uma cidade para ver as condições atuais e a previsão para os próximos cinco dias."
             />
           )}
         </main>

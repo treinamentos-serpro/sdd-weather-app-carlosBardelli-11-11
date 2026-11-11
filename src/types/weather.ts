@@ -17,7 +17,7 @@ export interface WeatherCondition {
 }
 
 export interface CurrentWeather {
-  observedAt: string;
+  observedAt: string | null;
   temperatureC: number | null;
   condition: WeatherCondition;
   humidityPercent: number | null;

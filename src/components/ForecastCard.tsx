@@ -5,8 +5,8 @@ import type { ForecastDay, Unit } from '../types/weather';
 
 interface ForecastCardProps {
   day: ForecastDay;
+  dayIndex: number;
   unit: Unit;
-  timeZone?: string | null;
 }
 
 function formatProbability(value: number | null): string {
@@ -15,7 +15,7 @@ function formatProbability(value: number | null): string {
   return `${new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 0 }).format(value)}%`;
 }
 
-export default function ForecastCard({ day, unit, timeZone = null }: ForecastCardProps) {
+export default function ForecastCard({ day, dayIndex, unit }: ForecastCardProps) {
   const weatherInfo = getWeatherCodeInfo(day.condition.code);
   const conditionLabel = day.condition.label || weatherInfo.label;
 
@@ -23,7 +23,7 @@ export default function ForecastCard({ day, unit, timeZone = null }: ForecastCar
     <article className="h-full min-w-0 rounded-xl border border-white/10 bg-white/5 p-3 text-white shadow-glass backdrop-blur-md sm:p-4">
       <header className="flex min-w-0 items-center justify-between gap-2">
         <h3 className="min-w-0 text-sm font-semibold capitalize sm:text-base">
-          <time dateTime={day.date}>{formatDayLabel(day.date, timeZone)}</time>
+          <time dateTime={day.date}>{formatDayLabel(day.date, dayIndex)}</time>
         </h3>
         <span aria-hidden="true" className="shrink-0 text-2xl leading-none">
           {weatherInfo.icon}
